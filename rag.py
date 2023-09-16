@@ -35,21 +35,28 @@ class RAGTask:
         self.task_prompt_builder = task_prompt_builder
         self.generated_text = None
 
-    def get_output(self, source_text: str, model_name: str = "gpt-3.5-turbo"):
+    def get_output(self, source_text: str, model_name: str = "gpt-3.5-turbo", overwrite: bool = False) -> str:
         """
         Get the output for the task, either by generating it or fetching from Weaviate.
         :param source_text: The source text based on which the task is created.
         :param model_name: The name of the model to use for generating output.
+        :param overwrite: Whether to overwrite the output if it already exists in Weaviate.
         :return: The generated output.
         """
-        # Check if the output can be fetched from Weaviate using the UUID
+
         task_prompt = self.task_prompt_builder(source_text)
         uuid = generate_uuid5(task_prompt)
 
+        # Check if the output can be fetched from Weaviate using the UUID
         fetched_object = db.load_generated_text(client, uuid)
         if fetched_object is not None:
             logger.info(f"Found {uuid} in Weaviate")
-            return fetched_object
+            if overwrite:
+                logger.info(f"Overwrite is true. Deleting object {uuid} in Weaviate")
+                client.data_object.delete(uuid, class_name=db.OUTPUT_COLLECTION)
+                logger.info(f"Deleted {uuid} in Weaviate")
+            else:
+                return fetched_object
         else:
             logger.warning(f"Could not find {uuid} in Weaviate")
 
@@ -102,7 +109,7 @@ def call_chatgpt(prompt: str, model_name: str = "gpt-3.5-turbo") -> str:
     completion = openai.ChatCompletion.create(
         model=model_name,
         messages=[
-            prompts.system_prompt,
+            prompts.SYSTEM_PROMPTS["Default"],
             {
                 "role": "user",
                 "content": prompt
@@ -110,18 +117,3 @@ def call_chatgpt(prompt: str, model_name: str = "gpt-3.5-turbo") -> str:
         ]
     )
     return completion.choices[0].message["content"]
-
-
-def main():
-    source_text = prompts.test_source_text
-
-    quiz_rag = RAGTask(task_prompt_builder=prompts.revision_quiz_json_builder)
-    summary_rag = RAGTask(task_prompt_builder=prompts.plaintext_summary_builder)
-    for rag_task in [quiz_rag, summary_rag]:
-        output = rag_task.get_output(source_text=source_text)
-        print(truncate_text(str(output)))
-        print(output)
-
-
-if __name__ == "__main__":
-    main()

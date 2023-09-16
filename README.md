@@ -1,21 +1,21 @@
-# Weaviate RAG (Retrieval-Augmented Generation) Task Manager
+# Simple RAG (Retrieval-Augumented Generation) Task Manager
 
-Weaviate RAG Task Manager is a Python project designed to streamline the management of RAG tasks using the Weaviate database. 
+Simple RAG Task Manager is a Python project designed to streamline the management of RAG tasks using GPT models and the Weaviate database.
 
-With this, you can automatically create, retrieve, and store the outputs of RAG tasks in a structured manner in Weaviate. This will allow you to easily manage and track the outputs of RAG tasks to save money and time.
+With this tool, you can automatically create, retrieve, and store the outputs of RAG tasks in a structured manner in Weaviate, allowing for easy management and tracking of outputs, ultimately saving time and resources.
 
 ## Features
 
-- **Automated Task Handling**: Easily create tasks and handle them through a streamlined Python class interface.
-- **Weaviate Integration**: Store and retrieve task outputs seamlessly with Weaviate database integration.
-- **Support for Multiple GPT Models**: The system supports various GPT models including gpt-3.5-turbo and upcoming versions like gpt-4.
-- **Logging**: Integrated logging allows for easy debugging and tracking of task statuses.
+- **Automated Task Handling**: Simplify the creation and management of tasks with a straightforward Python class interface.
+- **Weaviate Integration**: Seamlessly store and retrieve task outputs using Weaviate database integration.
+- **Support for Multiple GPT Models**: The system is compatible with various GPT models including "gpt-3.5-turbo", "gpt-3.5-turbo-16k", and forthcoming versions such as "gpt-4" and "gpt-4-32k".
+- **Logging**: Utilize integrated logging for effortless debugging and tracking of task statuses.
 
 ## Installation
 
-It should work with Python 3.8 and higher, but the development environment used Python 3.9.
+The tool should be compatible with Python 3.8 and higher, although development primarily utilized Python 3.9.
 
-You will also need to install the necessary Python packages using the following command:
+To get started, install the necessary Python packages using the command below:
 
 ```sh
 pip install openai weaviate-client
@@ -29,32 +29,39 @@ export OPENAI_APIKEY='your_openai_api_key_here'
 
 Finally, clone the repository and navigate to the project directory:
 
+## Quickstart
+
+See `example_usage.py` to see a brief example of how to use the tool.
+
 ## Usage
-The proejct is set up to use a WCS instance by default, but you can change configuration to your own Weaviate instance in `db` (see `connect_to_db()`).
+
+While the project is configured to use a WCS instance by default, you can easily adjust the configuration to your own Weaviate instance in the `db.py` file (see the `initialize()` function for details).
 
 Refer to the [Weaviate documentation](https://weaviate.io/developers/weaviate/installation) for more information on how to set up & connect to a Weaviate instance.
 
-The main class you'll be interacting with is `RAGTask`.
+The primary class you will interact with is `RAGTask`.
 
 ## RAGTask
-This class represents a general task to be handled by the system. You instantiate a `RAGTask` with a source text, and it can generate an output based on a task prompt, which can be generated or set manually.
 
-### Example extension of RAGTask
+The `RAGTask` class represents a general task to be handled by the system. 
+Instantiate a `RAGTask` with a task prompt builder function to initiate a task, which can then generate an output based on the source text.
 
-##### RAGRevisionQuiz
-This class extends `RAGTask`, automatically generating a task prompt for a revision quiz based on the source text.
+Extend `RAGTask` by defining custom task prompt builder functions that dictate how to generate prompts from the source text, which are then used to derive outputs.
 
 ## Working with Tasks
+
 To create a new task, instantiate an object of `RAGTask` (or its extension) with a source text:
 
 ```python
-task = RAGRevisionQuiz("Your source text here")
+from prompts import revision_quiz_json_builder
+
+task = RAGTask(task_prompt_builder=revision_quiz_json_builder)
 ```
 
-To get the output for a task, use the `get_output` method, optionally specifying a model name:
+To obtain the task output, utilize the `get_output` method, specifying a model name if desired:
 
 ```python
-output = task.get_output(model_name="gpt-3.5-turbo")
+output = task.get_output(source_text="Your source text here", model_name="gpt-3.5-turbo")
 ```
 
 ## License
