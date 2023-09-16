@@ -1,5 +1,4 @@
-from typing import Union
-
+from typing import Callable
 import openai
 import os
 import db
@@ -27,14 +26,13 @@ class RAGTask:
     A class representing a task to be handled by the RAG system.
 
     Attributes:
-        task_prompt_template (str): The template to be used for creating the task prompt.
-            It must contain the placeholder "{source_text}".
+        task_prompt_builder (str): A function to build the task prompt using the source text.
         generated_text (str): The text generated as output for the task.
     """
-    def __init__(self, task_prompt_template: str):
-        if "{source_text}" not in task_prompt_template:
-            raise ValueError('task_prompt_template must contain "{source_text}" placeholder')
-        self.task_prompt_template = task_prompt_template
+    def __init__(self, task_prompt_builder: Callable[[str], str]):
+        if not callable(task_prompt_builder):
+            raise ValueError('task_prompt_builder must be a callable function')
+        self.task_prompt_builder = task_prompt_builder
         self.generated_text = None
 
     def get_output(self, source_text: str, model_name: str = "gpt-3.5-turbo"):
@@ -45,7 +43,7 @@ class RAGTask:
         :return: The generated output.
         """
         # Check if the output can be fetched from Weaviate using the UUID
-        task_prompt = self.task_prompt_template.format(source_text=source_text)
+        task_prompt = self.task_prompt_builder(source_text)
         uuid = generate_uuid5(task_prompt)
 
         fetched_object = db.load_generated_text(client, uuid)
@@ -116,10 +114,13 @@ def call_chatgpt(prompt: str, model_name: str = "gpt-3.5-turbo") -> str:
 
 def main():
     source_text = prompts.test_source_text
-    task = RAGTask(task_prompt_template=prompts.REVISION_QUIZ)
-    output = task.get_output(source_text=source_text)
-    print(truncate_text(str(output)))
-    print(output)
+
+    quiz_rag = RAGTask(task_prompt_builder=prompts.revision_quiz_json_builder)
+    summary_rag = RAGTask(task_prompt_builder=prompts.plaintext_summary_builder)
+    for rag_task in [quiz_rag, summary_rag]:
+        output = rag_task.get_output(source_text=source_text)
+        print(truncate_text(str(output)))
+        print(output)
 
 
 if __name__ == "__main__":
