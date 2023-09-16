@@ -1,3 +1,5 @@
+from typing import Union
+
 import openai
 import os
 import db
@@ -30,10 +32,10 @@ class RAGTask:
         uuid (str): The UUID of the task.
         generated_text (str): The text generated as output for the task.
     """
-    def __init__(self, source_text: str):
+    def __init__(self, source_text: str, task_prompt: str):
         self.source_text = source_text
-        self.task_prompt = None
-        self.uuid = None
+        self.task_prompt = task_prompt
+        self.uuid = generate_uuid5(task_prompt)  # Generate UUID based on the task prompt
         self.generated_text = None
 
     def get_output(self, model_name: str = "gpt-3.5-turbo"):
@@ -66,15 +68,18 @@ class RAGTask:
         """
         return call_llm(self.task_prompt, model_name=model_name)
 
-    def load_from_weaviate(self):
+    def load_from_weaviate(self) -> Union[str, None]:
         """
         Load the generated output from Weaviate using the task's uuid.
         :return: The generated text retrieved from Weaviate.
         """
         weaviate_response = client.data_object.get(uuid=self.uuid, class_name=db.OUTPUT_COLLECTION)
-        return weaviate_response["properties"]["generated_text"]
+        if weaviate_response is None:
+            return None
+        else:
+            return weaviate_response["properties"]["generated_text"]
 
-    def save_to_weaviate(self, generated_text, uuid):
+    def save_to_weaviate(self, generated_text, uuid) -> str:
         """
         Save the generated output to Weaviate.
         :param generated_text: The text to be saved.
@@ -88,27 +93,6 @@ class RAGTask:
         uuid_out = db.add_object(client, data_object, uuid)
         assert uuid_out == uuid, f"UUIDs do not match: {uuid_out} != {uuid}"
         return uuid_out
-
-
-class RAGRevisionQuiz(RAGTask):
-    """
-    Represents a RAG revision quiz task, extending RAGTask with specific prompt generation and uuid assignment.
-
-    Attributes:
-        source_text (str): The source text for the task.
-    """
-    def __init__(self, source_text: str):
-        super().__init__(source_text)
-        self.task_prompt = self.get_task_prompt()
-        self.uuid = generate_uuid5(self.task_prompt)
-
-    def get_task_prompt(self):
-        """
-        Generate the task prompt using predefined quiz prompts.
-        :return: The generated task prompt.
-        """
-        task_prompt = prompts.revision_quiz_json(self.source_text)
-        return task_prompt
 
 
 def truncate_text(text_input: str, max_length: int = 50) -> str:
@@ -163,9 +147,13 @@ def call_chatgpt(prompt: str, model_name: str = "gpt-3.5-turbo") -> str:
 
 
 def main():
-    task = RAGRevisionQuiz(prompts.test_source_text)
+    source_text = prompts.test_source_text
+    task_prompt = prompts.revision_quiz_json(source_text)
+    task = RAGTask(source_text, task_prompt)
+    print(task.uuid)
     output = task.get_output()
     print(truncate_text(str(output)))
+    print(output)
 
 
 if __name__ == "__main__":
