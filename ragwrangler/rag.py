@@ -1,12 +1,12 @@
 from typing import Callable
 import openai
 import os
-import db
 from weaviate.util import generate_uuid5
 import weaviate
-import prompts
+from . import db
+from . import prompts
+from .utils import truncate_text
 import logging
-from utils import truncate_text
 
 
 logging.basicConfig(
@@ -64,6 +64,16 @@ class RAGTask:
                 return fetched_object
         else:
             logger.warning(f"Could not find {uuid} in Weaviate")
+
+            # Check if there are any similar objects in Weaviate based on vector similarity
+            similar_objects = db.find_similar_objects(self.client, task_prompt, similarity_theshold=0.95)
+            if similar_objects:
+                logger.info(f"Found similar object(s) in Weaviate with similarity above threshold")
+                logger.info(f"UUID: {similar_objects[0]['_additional']['id']}")
+                logger.info(f"Distance: {similar_objects[0]['_additional']['distance']}")
+                # Load the most similar object
+                most_similar_object = similar_objects[0]
+                return most_similar_object["generated_text"]
 
         # Generate output using the specified model and save it to Weaviate
         logger.info(f"Generating output for {truncate_text(task_prompt)}")

@@ -1,5 +1,4 @@
-from typing import Union
-
+from typing import Union, List
 import weaviate
 import os
 import logging
@@ -20,6 +19,7 @@ def connect_to_db() -> weaviate.Client:
     client = weaviate.Client(
         url=os.environ['WCS_URL'],
         auth_client_secret=weaviate.AuthApiKey(os.environ['WCS_ADMIN_KEY']),
+        additional_headers={"X-OpenAI-Api-Key": os.environ["OPENAI_APIKEY"]}
     )
     return client
 
@@ -28,6 +28,7 @@ def configure_database(client: weaviate.Client) -> None:
     collection_definition = {
         "class": OUTPUT_COLLECTION,
         "description": "RAG output",
+        "vectorizer": VECTORIZER,
         "properties": [
             {
                 "name": "prompt",
@@ -73,6 +74,22 @@ def load_generated_text(client: weaviate.Client, uuid: str) -> Union[str, None]:
         return None
     else:
         return weaviate_response["properties"]["generated_text"]
+
+
+def find_similar_objects(
+        client: weaviate.Client, prompt: str, similarity_theshold: float = 0.995
+) -> Union[List[dict], None]:
+    response = (
+        client.query.get(OUTPUT_COLLECTION, ["prompt", "generated_text"])
+        .with_near_text({"concepts": [prompt], "distance": 1-similarity_theshold})
+        .with_additional(["id", "distance"])
+        .with_limit(5)
+        .do()
+    )
+    if len(response['data']['Get'][OUTPUT_COLLECTION]) == 0:
+        return None
+    else:
+        return response['data']['Get'][OUTPUT_COLLECTION]
 
 
 def save_generated_text(client: weaviate.Client, prompt: str, generated_text: str, uuid: str) -> str:

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ragwrangler"
-version = "0.1.0"
+version = "0.1.2"
 description = "A simple RAG (Retrieval-Augumented Generation) Task Manager"
 readme = "README.md"
 authors = [{ name = "JP Hwang", email = "me@jphwang.com" }]

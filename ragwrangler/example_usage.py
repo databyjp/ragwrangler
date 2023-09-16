@@ -120,3 +120,4 @@ glossary_rag = RAGTask(task_prompt_builder=get_glossary_builder)
 for rag_task in [quiz_rag, summary_rag, glossary_rag]:
     output = rag_task.get_output(source_text=test_source_text)
     print(truncate_text(str(output), max_length=200))
+
