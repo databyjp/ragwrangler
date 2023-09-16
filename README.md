@@ -59,3 +59,6 @@ output = task.get_output(model_name="gpt-3.5-turbo")
 
 ## License
 This project is licensed under the MIT License.
+
+## Copyright
+© 2023 JP Hwang
