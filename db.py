@@ -1,3 +1,5 @@
+from typing import Union
+
 import weaviate
 import os
 import logging
@@ -56,4 +58,36 @@ def add_object(client: weaviate.Client, data_object: dict, uuid=None) -> str:
         class_name=OUTPUT_COLLECTION,
         uuid=uuid
     )
+    return uuid_out
+
+
+def load_generated_text(client: weaviate.Client, uuid: str) -> Union[str, None]:
+    """
+    Load the generated output from Weaviate using the task's uuid.
+    :param client: The Weaviate client.
+    :param uuid: The unique identifier for the object being retrieved.
+    :return: The generated text retrieved from Weaviate.
+    """
+    weaviate_response = client.data_object.get(uuid=uuid, class_name=OUTPUT_COLLECTION)
+    if weaviate_response is None:
+        return None
+    else:
+        return weaviate_response["properties"]["generated_text"]
+
+
+def save_generated_text(client: weaviate.Client, prompt: str, generated_text: str, uuid: str) -> str:
+    """
+    Save the generated output to Weaviate.
+    :param client: The Weaviate client.
+    :param prompt: The prompt used to generate the text.
+    :param generated_text: The text to be saved.
+    :param uuid: The unique identifier for the object being saved.
+    :return: The unique identifier of the saved object.
+    """
+    data_object = {
+        "prompt": prompt,
+        "generated_text": generated_text
+    }
+    uuid_out = add_object(client, data_object, uuid)
+    assert uuid_out == uuid, f"UUIDs do not match: {uuid_out} != {uuid}"
     return uuid_out

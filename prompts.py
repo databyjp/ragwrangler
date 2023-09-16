@@ -7,6 +7,62 @@ with open("test_source_text.txt", "r") as f:
     test_source_text = f.read()
 
 
+REVISION_QUIZ = "{source_text}"
+
+
+# REVISION_QUIZ = """
+#     Write a set of multiple-choice quiz questions with three to four options each
+#     to review and internalise the following information.
+#
+#     The quiz should be returned in a JSON format so that it can be displayed and undertaken by the user.
+#     The answer should be a list of integers corresponding to the indices of the correct answers.
+#     If there is only one correct answer, the answer should be a list of one integer.
+#     Also return an explanation for each answer, and a quote from the source text to support the answer.
+#
+#     The goal of the quiz is to provide a revision exercise,
+#     so that the user can internalise the information presented in this passage.
+#     The quiz questions should only cover information explicitly presented in this passage.
+#     The number of questions can be anything from one to 10, depending on the volume of information presented.
+#
+#     Sample quiz question:
+#
+#     {
+#         "question": "What is the capital of France?",
+#         "options": ["Paris", "London", "Berlin", "Madrid"],
+#         "answer": [0],
+#         "explanation": "Paris is the capital of France",
+#         "source passage": "SOME PASSAGE EXTRACTED FROM THE INPUT TEXT"
+#     }
+#
+#     Sample quiz set:
+#
+#     [
+#         {
+#             "question": "What is the capital of France?",
+#             "options": ["Paris", "London", "Berlin", "Madrid"],
+#             "answer": [0],
+#             "explanation": "Paris is the capital of France",
+#             "source passage": "SOME PASSAGE EXTRACTED FROM THE INPUT TEXT"
+#         },
+#         {
+#             "question": "What is the capital of Spain?",
+#             "options": ["Paris", "London", "Berlin", "Madrid"],
+#             "answer": [3],
+#             "explanation": "Madrid is the capital of Spain",
+#             "source passage": "SOME PASSAGE EXTRACTED FROM THE INPUT TEXT"
+#         }
+#     ]
+#
+#     ======= Source Text =======
+#
+#     {source_text}
+#
+#     ======= Questions =======
+#
+# """
+
+
+
 system_prompt = {
     "role": "system",
     "content": """

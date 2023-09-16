@@ -27,72 +27,40 @@ class RAGTask:
     A class representing a task to be handled by the RAG system.
 
     Attributes:
-        source_text (str): The source text based on which the task is created.
-        task_prompt (str): The prompt to be used for the task.
-        uuid (str): The UUID of the task.
+        task_prompt_template (str): The template to be used for creating the task prompt.
+            It must contain the placeholder "{source_text}".
         generated_text (str): The text generated as output for the task.
     """
-    def __init__(self, source_text: str, task_prompt: str):
-        self.source_text = source_text
-        self.task_prompt = task_prompt
-        self.uuid = generate_uuid5(task_prompt)  # Generate UUID based on the task prompt
+    def __init__(self, task_prompt_template: str):
+        if "{source_text}" not in task_prompt_template:
+            raise ValueError('task_prompt_template must contain "{source_text}" placeholder')
+        self.task_prompt_template = task_prompt_template
         self.generated_text = None
 
-    def get_output(self, model_name: str = "gpt-3.5-turbo"):
+    def get_output(self, source_text: str, model_name: str = "gpt-3.5-turbo"):
         """
         Get the output for the task, either by generating it or fetching from Weaviate.
+        :param source_text: The source text based on which the task is created.
         :param model_name: The name of the model to use for generating output.
         :return: The generated output.
         """
         # Check if the output can be fetched from Weaviate using the UUID
-        if self.uuid is not None:
-            fetched_object = self.load_from_weaviate()
-            if fetched_object is not None:
-                logger.info(f"Found {self.uuid} in Weaviate")
-                return fetched_object
-            else:
-                logger.warning(f"Could not find {self.uuid} in Weaviate")
+        task_prompt = self.task_prompt_template.format(source_text=source_text)
+        uuid = generate_uuid5(task_prompt)
+
+        fetched_object = db.load_generated_text(client, uuid)
+        if fetched_object is not None:
+            logger.info(f"Found {uuid} in Weaviate")
+            return fetched_object
+        else:
+            logger.warning(f"Could not find {uuid} in Weaviate")
 
         # Generate output using the specified model and save it to Weaviate
-        logger.info(f"Generating output for {truncate_text(self.task_prompt)}")
-        generated_text = self.generate_output(model_name=model_name)
-        uuid = self.save_to_weaviate(generated_text, self.uuid)
+        logger.info(f"Generating output for {truncate_text(task_prompt)}")
+        generated_text = call_llm(task_prompt, model_name=model_name)
+        uuid = db.save_generated_text(client, task_prompt, generated_text, uuid)
         logger.info(f"Saved {uuid} to Weaviate")
         return generated_text
-
-    def generate_output(self, model_name: str = "gpt-3.5-turbo"):
-        """
-        Generate output using a specific model.
-        :param model_name: The name of the model to be used. Default is "gpt-3.5-turbo".
-        :return: The generated output.
-        """
-        return call_llm(self.task_prompt, model_name=model_name)
-
-    def load_from_weaviate(self) -> Union[str, None]:
-        """
-        Load the generated output from Weaviate using the task's uuid.
-        :return: The generated text retrieved from Weaviate.
-        """
-        weaviate_response = client.data_object.get(uuid=self.uuid, class_name=db.OUTPUT_COLLECTION)
-        if weaviate_response is None:
-            return None
-        else:
-            return weaviate_response["properties"]["generated_text"]
-
-    def save_to_weaviate(self, generated_text, uuid) -> str:
-        """
-        Save the generated output to Weaviate.
-        :param generated_text: The text to be saved.
-        :param uuid: The unique identifier for the object being saved.
-        :return: The unique identifier of the saved object.
-        """
-        data_object = {
-            "prompt": self.task_prompt,
-            "generated_text": generated_text
-        }
-        uuid_out = db.add_object(client, data_object, uuid)
-        assert uuid_out == uuid, f"UUIDs do not match: {uuid_out} != {uuid}"
-        return uuid_out
 
 
 def truncate_text(text_input: str, max_length: int = 50) -> str:
@@ -148,10 +116,8 @@ def call_chatgpt(prompt: str, model_name: str = "gpt-3.5-turbo") -> str:
 
 def main():
     source_text = prompts.test_source_text
-    task_prompt = prompts.revision_quiz_json(source_text)
-    task = RAGTask(source_text, task_prompt)
-    print(task.uuid)
-    output = task.get_output()
+    task = RAGTask(task_prompt_template=prompts.REVISION_QUIZ)
+    output = task.get_output(source_text=source_text)
     print(truncate_text(str(output)))
     print(output)
 
