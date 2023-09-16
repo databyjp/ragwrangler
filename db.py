@@ -9,15 +9,15 @@ OUTPUT_COLLECTION = "RAGOutput"
 
 
 def initialize() -> weaviate.Client:
-    client = connect_to_wcs()
+    client = connect_to_db()
     configure_database(client)
     return client
 
 
-def connect_to_wcs() -> weaviate.Client:
+def connect_to_db() -> weaviate.Client:
     client = weaviate.Client(
-        url=os.environ['JP_WCS_URL'],
-        auth_client_secret=weaviate.AuthApiKey(os.environ['JP_WCS_ADMIN_KEY']),
+        url=os.environ['WCS_URL'],
+        auth_client_secret=weaviate.AuthApiKey(os.environ['WCS_ADMIN_KEY']),
     )
     return client
 
@@ -57,6 +57,3 @@ def add_object(client: weaviate.Client, data_object: dict, uuid=None) -> str:
         uuid=uuid
     )
     return uuid_out
-
-
-# client.query.get("RAGOutput", ["prompt", "generated_text"]).do()

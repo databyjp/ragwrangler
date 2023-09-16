@@ -3,15 +3,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-test_source_text = """
-
-Unfortunately, the BGP protocol in practice can suffer from two significant limitations: misconfigurations and faults. A possible misconfiguration or an error can result in an excessively large number of updates, resulting in route instability, router processor and memory overloading, outages, and router failures. One way that ASes can help reduce the risk that these events will happen is by limiting the routing table size and limiting the number of route changes. 
-
-An AS can limit the routing table size using filtering. For example, long, specific prefixes can be filtered to encourage route aggregation. In addition, routers can limit the number of prefixes advertised from a single source on a per-session basis. Some small ASes also have the option to configure default routes into their forwarding tables. ASes can likewise protect other ASes by using route aggregation and exporting less specific prefixes where possible. 
-
-Also, an AS can limit the number of routing changes, explicitly limiting the propagation of unstable routes by using a mechanism known as flap damping. To apply this technique, an AS will track the number of updates to a specific prefix over a certain amount of time. If the tracked value reaches a configurable value, the AS can suppress that route until a later time. Because this can affect reachability, an AS can be strategic about how it uses this technique for certain prefixes. For example, more specific prefixes could be more aggressively suppressed (lower thresholds), while routes to known destinations that require high availability could be allowed higher thresholds.
-
-"""
+with open("test_source_text.txt", "r") as f:
+    test_source_text = f.read()
 
 
 system_prompt = {
@@ -29,7 +22,12 @@ system_prompt = {
 }
 
 
-def quiz_prompt(source_text: str) -> str:
+def revision_quiz_json(source_text: str) -> str:
+    """
+    Generate a revision quiz in JSON form.
+    :param source_text: The source text to be used.
+    :return: The generated quiz; should be parsable into valid JSON.
+    """
     prompt = """
         Write a set of multiple-choice quiz questions with three to four options each 
         to review and internalise the following information.
@@ -78,5 +76,55 @@ def quiz_prompt(source_text: str) -> str:
         """ + source_text + """
 
         ======= Questions =======
+        
+    """
+    return prompt
+
+
+def plaintext_summary(source_text: str) -> str:
+    """
+    Generate a plaintext summary of the source text.
+    :param source_text: The source text to be used.
+    :return: The summary.
+    """
+    prompt = f"""
+    Summarize the following into bullet points that presents the core concepts.
+    This should be in plain language that will help the reader best understand the core concepts,
+    so that they can internalise the ideas presented in this passage.
+
+    The bullet points should start at a high level,
+    and nested to go into further details if necessary
+
+    ==============
+
+    {source_text}
+
+    ==============
+
+    Summary:
+     
+    """
+    return prompt
+
+
+def get_glossary(source_text: str) -> str:
+    prompt = f"""
+    Return a glossary of key terms or jargon from the source text
+    to help someone reading this material understand the text.
+    Each explanation should be in as plain and clear language as possible.
+    For this task, it is acceptable to rely on information outside of the source text.
+
+    The output should be in the following Markdown format:
+
+    - **TERM A**: EXPLANATION A 
+    - **TERM B**: EXPLANATION B
+    - ...
+
+    ====== Source text =======
+
+    {source_text}
+
+    ====== Glossary =======
+
     """
     return prompt
