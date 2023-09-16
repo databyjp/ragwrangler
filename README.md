@@ -53,7 +53,7 @@ Extend `RAGTask` by defining custom task prompt builder functions that dictate h
 To create a new task, instantiate an object of `RAGTask` (or its extension) with a source text:
 
 ```python
-from prompts import revision_quiz_json_builder
+from ragwrangler.prompts import revision_quiz_json_builder
 
 task = RAGTask(task_prompt_builder=revision_quiz_json_builder)
 ```

@@ -1,0 +1,21 @@
+# pyproject.toml
+
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ragwrangler"
+version = "0.1.0"
+description = "A simple RAG (Retrieval-Augumented Generation) Task Manager"
+readme = "README.md"
+authors = [{ name = "JP Hwang", email = "me@jphwang.com" }]
+dependencies = [
+    "openai",
+    "weaviate-client",
+]
+requires-python = ">=3.8"
+keywords = ["rag", "generation", "retrieval", "weaviate", "openai"]
+
+[tool.setuptools.packages.find]
+include = ["ragwrangler"]

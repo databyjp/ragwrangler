@@ -3,8 +3,10 @@ import openai
 import os
 import db
 from weaviate.util import generate_uuid5
+import weaviate
 import prompts
 import logging
+from utils import truncate_text
 
 
 logging.basicConfig(
@@ -18,7 +20,6 @@ GPT_MODELS = ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"]
 ALL_MODELS = GPT_MODELS
 
 openai.api_key = os.environ["OPENAI_APIKEY"]
-client = db.initialize()
 
 
 class RAGTask:
@@ -29,11 +30,15 @@ class RAGTask:
         task_prompt_builder (str): A function to build the task prompt using the source text.
         generated_text (str): The text generated as output for the task.
     """
-    def __init__(self, task_prompt_builder: Callable[[str], str]):
+    def __init__(self, task_prompt_builder: Callable[[str], str], client: weaviate.Client = None):
         if not callable(task_prompt_builder):
             raise ValueError('task_prompt_builder must be a callable function')
         self.task_prompt_builder = task_prompt_builder
         self.generated_text = None
+        if client is None:
+            self.client = db.initialize()
+        else:
+            self.client = client
 
     def get_output(self, source_text: str, model_name: str = "gpt-3.5-turbo", overwrite: bool = False) -> str:
         """
@@ -48,12 +53,12 @@ class RAGTask:
         uuid = generate_uuid5(task_prompt)
 
         # Check if the output can be fetched from Weaviate using the UUID
-        fetched_object = db.load_generated_text(client, uuid)
+        fetched_object = db.load_generated_text(self.client, uuid)
         if fetched_object is not None:
             logger.info(f"Found {uuid} in Weaviate")
             if overwrite:
                 logger.info(f"Overwrite is true. Deleting object {uuid} in Weaviate")
-                client.data_object.delete(uuid, class_name=db.OUTPUT_COLLECTION)
+                self.client.data_object.delete(uuid, class_name=db.OUTPUT_COLLECTION)
                 logger.info(f"Deleted {uuid} in Weaviate")
             else:
                 return fetched_object
@@ -63,22 +68,9 @@ class RAGTask:
         # Generate output using the specified model and save it to Weaviate
         logger.info(f"Generating output for {truncate_text(task_prompt)}")
         generated_text = call_llm(task_prompt, model_name=model_name)
-        uuid = db.save_generated_text(client, task_prompt, generated_text, uuid)
+        uuid = db.save_generated_text(self.client, task_prompt, generated_text, uuid)
         logger.info(f"Saved {uuid} to Weaviate")
         return generated_text
-
-
-def truncate_text(text_input: str, max_length: int = 50) -> str:
-    """
-    Truncate a text to a specified maximum length, adding ellipsis if truncated.
-    :param text_input: The input text.
-    :param max_length: The maximum allowed length for the output text.
-    :return:
-    """
-    if len(text_input) > max_length:
-        return text_input[:max_length] + "..."
-    else:
-        return text_input
 
 
 def call_llm(prompt: str, model_name: str = "gpt-3.5-turbo") -> str:
