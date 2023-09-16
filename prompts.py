@@ -1,3 +1,8 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 test_source_text = """
 
 Unfortunately, the BGP protocol in practice can suffer from two significant limitations: misconfigurations and faults. A possible misconfiguration or an error can result in an excessively large number of updates, resulting in route instability, router processor and memory overloading, outages, and router failures. One way that ASes can help reduce the risk that these events will happen is by limiting the routing table size and limiting the number of route changes. 
