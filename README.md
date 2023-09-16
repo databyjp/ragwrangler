@@ -1,6 +1,6 @@
-# Simple RAG (Retrieval-Augumented Generation) Task Manager
+# RAGWrangler - A simple RAG (Retrieval-Augumented Generation) Task Manager
 
-Simple RAG Task Manager is a Python project designed to streamline the management of RAG tasks using GPT models and the Weaviate database.
+RAGWrangler is a Python project designed to streamline the management of RAG tasks using generative language models and the Weaviate database.
 
 With this tool, you can automatically create, retrieve, and store the outputs of RAG tasks in a structured manner in Weaviate, allowing for easy management and tracking of outputs, ultimately saving time and resources.
 
@@ -8,7 +8,7 @@ With this tool, you can automatically create, retrieve, and store the outputs of
 
 - **Automated Task Handling**: Simplify the creation and management of tasks with a straightforward Python class interface.
 - **Weaviate Integration**: Seamlessly store and retrieve task outputs using Weaviate database integration.
-- **Support for Multiple GPT Models**: The system is compatible with various GPT models including "gpt-3.5-turbo", "gpt-3.5-turbo-16k", and forthcoming versions such as "gpt-4" and "gpt-4-32k".
+- **Support for Multiple Language Models**: You can easily swap out language models as desired.
 - **Logging**: Utilize integrated logging for effortless debugging and tracking of task statuses.
 
 ## Installation
